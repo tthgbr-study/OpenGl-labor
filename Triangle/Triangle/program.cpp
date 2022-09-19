@@ -57,19 +57,6 @@ int main()
 	}
 	glViewport(0, 0, SCR_WIDTH, SCR_HEIGHT);
 
-	// vertex data
-	GLfloat vertices[] =
-	{
-		-0.5f, -0.5f, 0.0f,
-		 0.5f, -0.5f, 0.0f,
-		 0.0f,  0.5f, 0.0f
-	};
-
-	GLuint VBO = 0;
-	glGenBuffers(1, &VBO);
-	glBindBuffer(GL_ARRAY_BUFFER, VBO);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
-
 	// shader object representing the vertex shader
 	GLuint vertexShader = glCreateShader(GL_VERTEX_SHADER);
 	glShaderSource(vertexShader, 1, &vertexShaderSource, nullptr);
@@ -84,6 +71,7 @@ int main()
 		std::cerr << "ERROR::SHADER::VERTEX::COMPILATION_FAILED\n" << infoLog << std::endl;
 	}
 
+	// shader object representing the fragment shader
 	GLuint fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
 	glShaderSource(fragmentShader, 1, &fragmentShaderSource, nullptr);
 	glCompileShader(fragmentShader);
@@ -94,6 +82,7 @@ int main()
 		std::cerr << "ERROR::SHADER::FRAGMENT::COMPILATION_FAILED\n" << infoLog << std::endl;
 	}
 
+	// object representing the shader program
 	GLuint shaderProgram = glCreateProgram();
 	glAttachShader(shaderProgram, vertexShader);
 	glAttachShader(shaderProgram, fragmentShader);
@@ -104,11 +93,27 @@ int main()
 		glGetProgramInfoLog(shaderProgram, 512, nullptr, infoLog);
 		std::cerr << "ERROR::SHADER::PROGRAM::LINKING_FAILED\n" << infoLog << std::endl;
 	}
-
 	glDeleteShader(vertexShader);
 	glDeleteShader(fragmentShader);
 
-	// TODO: Tell OpenGl how to interpret the contents of the vertex buffer using vertex attributes
+	// vertex data
+	GLfloat vertices[] =
+	{
+		-0.5f, -0.5f, 0.0f,
+		 0.5f, -0.5f, 0.0f,
+		 0.0f,  0.5f, 0.0f
+	};
+
+	GLuint VBO = 0, VAO = 0;
+	glGenVertexArrays(1, &VAO);
+	glGenBuffers(1, &VBO);
+	glBindVertexArray(VAO);
+	
+	glBindBuffer(GL_ARRAY_BUFFER, VBO);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(GLfloat), (GLvoid*)0);
+	glEnableVertexAttribArray(0);
 	
 	// render loop
 	while(!glfwWindowShouldClose(window))
@@ -119,6 +124,9 @@ int main()
 		// rendering commands here
 		glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT);
+
+		glUseProgram(shaderProgram);
+		glDrawArrays(GL_TRIANGLES, 0, 3);
 
 		// check and call events and swap the buffers
 		glfwPollEvents();
@@ -134,8 +142,11 @@ void framebufferSizeCallback(GLFWwindow* window, int width, int height)
 
 void processInput(GLFWwindow* window)
 {
-	if(glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
+	if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
 	{
 		glfwSetWindowShouldClose(window, true);
 	}
 }
+
+
+
