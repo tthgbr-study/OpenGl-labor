@@ -3,11 +3,11 @@
 
 #include <iostream>
 #include "shader.h"
-#include "vendor//glm/vec4.hpp"
 #include "vendor/stb_image/stb_image.h"
 #include "vendor/imgui/imgui.h"
 #include "vendor/imgui/imgui_impl_opengl3.h"
 #include "vendor/imgui/imgui_impl_glfw.h"
+#include "vendor/glm/vec4.hpp"
 
 void framebufferSizeCallback(GLFWwindow* window, int width, int height);
 void processInput(GLFWwindow* window);
@@ -80,7 +80,6 @@ int main()
 
 	GLuint texture1 = 0;
 	glGenTextures(1, &texture1);
-	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D, texture1);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
@@ -102,10 +101,8 @@ int main()
 	}
 	stbi_image_free(data);
 
-
 	GLuint texture2 = 0;
 	glGenTextures(1, &texture2);
-	glActiveTexture(GL_TEXTURE1);
 	glBindTexture(GL_TEXTURE_2D, texture2);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
@@ -159,6 +156,12 @@ int main()
 		glClearColor(clearColor.r, clearColor.g, clearColor.b, clearColor.a); // color set from ImGui 
 		glClear(GL_COLOR_BUFFER_BIT);
 
+		glActiveTexture(GL_TEXTURE0);
+		glBindTexture(GL_TEXTURE_2D, texture1);
+		glActiveTexture(GL_TEXTURE1);
+		glBindTexture(GL_TEXTURE_2D, texture2);
+
+		glBindVertexArray(VAO);
 		glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
 
 		ImGui::Begin("Texture tutorial settings!");
