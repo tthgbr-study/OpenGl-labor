@@ -17,6 +17,7 @@
 
 void framebufferSizeCallback(GLFWwindow* window, int width, int height);
 void mouse_callback(GLFWwindow* window, double xpos, double ypos);
+void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods);
 
 void processInput(GLFWwindow* window);
 
@@ -30,6 +31,7 @@ glm::vec3 cameraFront = glm::vec3(0.0f, 0.0f, -1.0f);
 glm::vec3 cameraUp = glm::vec3(0.0f, 1.0f, 0.0f);
 
 bool firstMouse = true;
+bool cursorCaptured = true;
 float yaw = -90.0f;	// yaw is initialized to -90.0 degrees since a yaw of 0.0 results in a direction vector pointing to the right so we initially rotate a bit to the left.
 float pitch = 0.0f;
 float lastX = SCR_WIDTH / 2.0f;
@@ -61,6 +63,7 @@ int main()
 	glfwMakeContextCurrent(window);
 	glfwSetFramebufferSizeCallback(window, framebufferSizeCallback);
 	glfwSetCursorPosCallback(window, mouse_callback);
+	glfwSetKeyCallback(window, key_callback);
 
 	// glfw captures the mouse
 	glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
@@ -204,6 +207,7 @@ int main()
 
 	glm::vec4 clearColor{ 0.2f, 0.3f, 0.3f, 1.0f };
 	GLfloat mixValue = 0.2f;
+	float test = 1; // delete later, for learning ImGUI
 
 	// render loop
 	while (!glfwWindowShouldClose(window))
@@ -264,11 +268,20 @@ int main()
 			glDrawArrays(GL_TRIANGLES, 0, 36);
 		}
 
-
 		ImGui::Begin("Texture tutorial settings!");
 		ImGui::SliderFloat("Interpolation slider.", &mixValue, 0.0f, 1.0f);
 		glUniform1f(glGetUniformLocation(shaderProgram.ID, "mixValue"), mixValue);
 		ImGui::ColorEdit3("Clear color", (float*)&clearColor);
+		ImGui::PushItemWidth(80);
+		ImGui::AlignTextToFramePadding();
+		ImGui::Text("Coordinates:");
+		ImGui::SameLine(0.0f, 20.0f);
+		ImGui::InputFloat("X", &test);
+		ImGui::SameLine(0.0f, 20.0f);
+		ImGui::InputFloat("Y", &test);
+		ImGui::SameLine(0.0f, 20.0f);
+		ImGui::InputFloat("Z", &test);
+		ImGui::PopItemWidth();
 		ImGui::End();
 
 		ImGui::Render();
@@ -303,38 +316,60 @@ void framebufferSizeCallback(GLFWwindow* window, int width, int height)
 
 void mouse_callback(GLFWwindow* window, double xpos, double ypos)
 {
-	float xoffset = xpos - lastX;
-	float yoffset = lastY - ypos; // reversed since y-coordinates range from bottom to top
-	lastX = xpos;
-	lastY = ypos;
+	float xoffset = static_cast<float>(xpos - lastX);
+	float yoffset = static_cast<float>(lastY - ypos);
+	lastX = static_cast<float>(xpos);
+	lastY = static_cast<float>(ypos);
 
 	const float sensitivity = 0.1f;
 	xoffset *= sensitivity;
 	yoffset *= sensitivity;
 
-	yaw += xoffset;
-	pitch += yoffset;
+	if (cursorCaptured)
+	{
+		yaw += xoffset;
+		pitch += yoffset;
 
-	if (pitch > 89.0f)
-		pitch = 89.0f;
-	if (pitch < -89.0f)
-		pitch = -89.0f;
+		if (pitch > 89.0f)
+			pitch = 89.0f;
+		if (pitch < -89.0f)
+			pitch = -89.0f;
 
-	glm::vec3 direction;
-	direction.x = cos(glm::radians(yaw)) * cos(glm::radians(pitch));
-	direction.y = sin(glm::radians(pitch));
-	direction.z = sin(glm::radians(yaw)) * cos(glm::radians(pitch));
-	cameraFront = glm::normalize(direction);
+		glm::vec3 direction;
+		direction.x = cos(glm::radians(yaw)) * cos(glm::radians(pitch));
+		direction.y = sin(glm::radians(pitch));
+		direction.z = sin(glm::radians(yaw)) * cos(glm::radians(pitch));
+		cameraFront = glm::normalize(direction);
+	}
+}
+
+void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods)
+{
+	// free mouse cursor on shift + F1
+	if (key == GLFW_KEY_F1 && mods == GLFW_MOD_SHIFT && action == GLFW_PRESS)
+	{
+		if(cursorCaptured)
+		{
+			glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+			cursorCaptured = false;
+		}
+		else
+		{
+			glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+			cursorCaptured = true;
+		}
+	}
+
+	// exit from the render window when if ESC pressed
+	if (key == GLFW_KEY_ESCAPE  && action == GLFW_PRESS)
+	{
+		glfwSetWindowShouldClose(window, true);
+	}
 }
 
 void processInput(GLFWwindow* window)
 {
-	if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
-	{
-		glfwSetWindowShouldClose(window, true);
-	}
-
-	float cameraSpeed = 2.5f * deltaTime;
+	float cameraSpeed = static_cast<float>(2.5 * deltaTime);
 	if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
 	{
 		cameraPos += cameraSpeed * cameraFront;
